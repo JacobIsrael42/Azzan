@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="en"> 
+
+<head>
+<meta charset="UTF-8"> 
+<meta name="viewport" content="width=2000, initial-scale=1.0">
+<title class="title">Love Canals </title>
+</head>
+
+<style>
+.bigLabel {
+  font-size: 40px;
+}
+.radio{
+height:30px; 
+width:30px; 
+}
+
+.heading {
+  font-size: 80px;
+}
+
+.show {
+  font-size: 40px;
+}
+
+canvas { 
+ position:absolute; 
+background:transparent; 
+}
+
+.transparentCanvas{ 
+background-color: transparent; 
+}
+</style>
+
+<body>
+<h1 class="heading">The Love Canals</h1>
+
+<label for="showLabelCheckbox" class="bigLabel">Show labels ===></label>
+<input type="checkbox" id="showLabelCheckbox" name="showLabelCheckbox" class="radio"  value="1" onclick="checkboxChanged(this)">
+  <br>
+
+<div class="show" ><u >View detail</u></div><br>
+
+&nbsp&nbsp
+<input type="radio" id="rb1" class="radio"  name="detailSelect" value="1" onClick="showInformation(this);">
+  <label for="rb1" class="bigLabel">Map</label> 
+  &nbsp&nbsp
+<input type="radio" id="rb2" class="radio"  name="detailSelect" value="2" onClick="showInformation(this);">
+  <label for="rb2" class="bigLabel">Azzan Borough</label> 
+  
+&nbsp&nbsp
+<input type="radio" id="rb3" class="radio"  name="detailSelect" value="3" onClick="showInformation(this);">
+<label for="rb3" class="bigLabel">School & Factory</label>
+&nbsp&nbsp
+<input type="radio" id="rb4" class="radio"  name="detailSelect" value="4" onClick="showInformation(this);">
+<label for="rb4" class="bigLabel">School & Factory Quad</label>
+&nbsp&nbsp
+<input type="radio" id="rb5" class="radio"  name="detailSelect" value="5" onClick="showInformation(this);">
+<label for="rb5" class="bigLabel">Forest</label>
+
+&nbsp&nbsp
+<input type="radio" id="rb6" class="radio"  name="detailSelect" value="6" onClick="showInformation(this);">
+<label for="rb6" class="bigLabel">Capital</label>
+
+&nbsp&nbsp
+<input type="radio" id="rb7" class="radio"  name="detailSelect" value="7" onClick="showInformation(this);">
+<label for="rb7" class="bigLabel">Instructor Village</label>
+
+&nbsp&nbsp
+<input type="radio" id="rb8" class="radio"  name="detailSelect" value="8" onClick="showInformation(this);">
+<label for="rb8" class="bigLabel">Camping</label>
+&nbsp&nbsp
+<input type="radio" id="rb9" class="radio"  name="detailSelect" value="9" onClick="showInformation(this);">
+<label for="rb9" class="bigLabel">Coast</label>
+
+<br>
+<label for="lname">Latitude Longitude:</label>
+  <input type="text" id="lname" name="lname" value="£"><br><br>
+
+<br>
+<canvas id="myCanvas" width="2400" height="3200" style="border:0px solid black; z-index: 1;" ></canvas>
+
+<canvas id="insetCanvas" width="2400" height="3200" style="border:0px solid black; z-index: 2;" ></canvas>
+
+<canvas id="pinCanvas" class="transparentCanvas" width="2400" height="3200" style="border:0px solid black; z-index: 3;" ></canvas>
+
+<script>
+//_______Global Constants_____________
+const TWO_PI = Math.PI * 2.0;
+const ONE_N_HALF_PI = Math.PI * 1.5;
+
+const HALF_PI = Math.PI / 2.0;
+const QUARTER_PI = Math.PI / 4.0;
+
+const EIGHTH_PI = Math.PI / 8.0;
+var SHOW_LABELS = false;
+
+const MAP_CANVAS = document.getElementById("myCanvas");
+const INSET_CANVAS = document.getElementById("insetCanvas");
+const PIN_CANVAS = document.getElementById("pinCanvas");
+
+const CANVAS_WIDTH = MAP_CANVAS.width;
+const CANVAS_HEIGHT = MAP_CANVAS.height;
+const MAP_CONTEXT = MAP_CANVAS.getContext("2d");
+const INSET_CONTEXT = INSET_CANVAS.getContext("2d");
+
+const PIN_CONTEXT = PIN_CANVAS.getContext("2d");
+let CURRENT_CONTEXT = MAP_CONTEXT;
+
+const MAP_SCALE = 4000.0;
+const MAP_OFFSET_X = 34.21; // 33.93 minimum
+const MAP_OFFSET_Y = 30.89;
+const CLOSE_UP_X = 900;
+const CLOSE_UP_Y = 600;
+const CLOSE_UP_WIDTH = 1000;
+const CLOSE_UP_HEIGHT = 1000;
+
+const NO_DASH = []; // width  gap
+
+// CLOCKWISE !!!!!
+
+const AZZAN_LEFT = [ 31.3234500, 34.2187744, 31.3235477, 34.2188290, 31.3237817, 34.2191368, 31.3242102, 34.2197336, 31.3244210, 34.2200719 , 31.3248615, 34.2203528, 31.3251685, 34.2210113, 31.3253753, 34.2211689, 31.3259930, 34.2220108, 31.3262433, 34.2222616, 31.3264484, 34.2227152, 31.3273348, 34.2237592, 31.3281089, 34.2246809, 31.3283194, 34.2250511, 31.3285153, 34.2253900, 31.3292794, 34.2260991, 31.3303817, 34.2275412, 31.3307108, 34.2279780, 31.3309923, 34.2282181, 31.3313354, 34.2286667, 31.3314348, 34.2288595, 31.3315926, 34.2290683, 31.3318036, 34.2292122, 31.3318643, 34.2293175, 31.3323867, 34.2297946, 31.3335752, 34.2310854, 31.3338679, 34.2314330, 31.3342069, 34.2319283, 31.3343206, 34.2319970, 31.3345858, 34.2323420 ,31.3346686, 34.2325287, 31.3350915, 34.2328737, 31.3355389, 34.2334987, 31.3361107, 34.2341991, 31.3364338, 34.2347459, 31.3370180, 34.2353370, 31.3373252, 34.2355704, 31.3374269, 34.2357175, 31.3375013, 34.2358550, 31.3378312, 34.2361598, 31.3379607, 34.2363435, 31.3381445, 34.2366989, 31.3385609, 34.2371814, 31.3398143, 34.2385865, 31.3623967, 34.2647598, 31.3872270, 34.2921961, 31.4264628, 34.3387194 ,31.4417198, 34.3536479, 31.5547100, 34.4604377, 31.5797942, 34.4800819, 31.5935132, 34.4904389];
+
+const AZZAN_TOP = [ 31.5935172, 34.4904583 ,31.5921167, 34.4925210, 31.5897146, 34.4960457 ,31.5840768, 34.5042382 ,31.5644060, 34.5330233 ,31.5578490, 34.5422706 ,31.5491021, 34.5539036 ,31.5475838, 34.5559297 ,31.5464803, 34.5577878 ,31.5455437, 34.5593619 ,31.5439827, 34.5618913 ,31.5420251, 34.5649074 ,31.5413685, 34.5658978 ,31.5404495, 34.5672859];
+
+////==============/////
+const AZZAN_RIGHT = [ 31.5404350, 34.5672875 ,31.5398052, 34.5672929 ,31.5389259, 34.5669053 ,31.5378826, 34.5661680 ,31.5363173, 34.5658314 ,31.5344990, 34.5655602 ,31.5336565, 34.5654408 ,31.5329407, 34.5653248 ,31.5328066, 34.5651947 ,31.5322462, 34.5646486 ,31.5317939, 34.5645017 ,31.5310594, 34.5630815 ,31.5307839, 34.5625554 ,31.5302415, 34.5619231 ,31.5289472, 34.5601565 ,31.5286289, 34.5597344 ,31.5269705, 34.5579189 ,31.5251280, 34.5565708 ,31.5241503, 34.5558818 ,31.5219974, 34.5543673 ,31.5192553, 34.5524975 ,31.5189461, 34.5522963 ,31.5148486, 34.5487783 ,31.5131619, 34.5477175 ,31.5123633, 34.5471301 ,31.5120429, 34.5464055 ,31.5113755, 34.5439439 ,31.5099431, 34.5388843 ,31.5063784, 34.5306227 ,31.5028741, 34.5258635 ,31.5010543, 34.5167611 ,31.5002687, 34.5123589 ,31.4958739, 34.5051086 ,31.4805728, 34.4859150 ,31.4779477, 34.4798710 ,31.4746201, 34.4761555 ,31.4720657, 34.4746182 ,31.4712136, 34.4736278 ,31.4660980, 34.4682064 ,31.4631344, 34.4656898 ,31.4621380, 34.4653381 ,31.4618929, 34.4643889 ,31.4612108, 34.4641951 ,31.4606457, 34.4638465 ,31.4535649, 34.4555822 ,31.4526416, 34.4539176 ,31.4466037, 34.4483886 ,31.4439553, 34.4456909 ,31.4432118, 34.4429521 ,31.4430391, 34.4415214 ,31.4411303, 34.4377429 ,31.4347944, 34.4323171 ,31.4328679, 34.4317914 ,31.4276255, 34.4265631 ,31.4265246, 34.4239992 ,31.4248678, 34.4224771 ,31.4243623, 34.4218364 ,31.4239334, 34.4206864 ,31.4202017, 34.4151942 ,31.4185637, 34.4133623 ,31.4177740, 34.4132664 ,31.4173411, 34.4129656 ,31.4165225, 34.4118304 ,31.4160255, 34.4116363 ,31.4155002, 34.4091525 ,31.4131147, 34.4066031 ,31.4129742, 34.4061766 ,31.4130019, 34.4048415 ,31.4123043, 34.4037060 ,31.4112885, 34.4020547 ,31.4106407, 34.4014589 ,31.4097708, 34.4010429 ,31.4083690, 34.3997541 ,31.4076636, 34.3988931 ,31.4067608, 34.3981732 ,31.4036033, 34.3945898 ,31.4011703, 34.393349 ,31.3989697, 34.3914275 ,31.3980939, 34.3898326 ,31.3970145, 34.3888348 ,31.3963067, 34.3884134 ,31.3957990, 34.3877871 ,31.3955252, 34.3872409 ,31.3900639, 34.3804744 ,31.3893839, 34.3802132 ,31.3888272, 34.3803449 ,31.3884964, 34.3807037 ,31.3879657, 34.3806306 ,31.3862616, 34.3795862 ,31.3798367, 34.3748545 ,31.3787679, 34.3739103,31.3770498, 34.3738537 ,31.3756475, 34.3732780 ,31.3741421, 34.3733913 ,31.3722102, 34.3716019 ,31.3709561, 34.3721152 ,31.3696301, 34.3713257 ,31.3692897, 34.3701351 ,31.3697306, 34.3683521 ,31.3690704, 34.3670677 ,31.3642189, 34.3651794 ,31.3065384, 34.3738433 ,31.2906704, 34.3677389 ,31.2787185, 34.3439728 ,31.2526929, 34.3195832 ,31.2478113, 34.3070415 ,31.2439606, 34.2987588 ,31.2406248, 34.2909731, 31.2197034, 34.2674031];
+
+const AZZAN_BOTTOM = [ 31.2197398, 34.2673837, 31.2959362, 34.2399075, 31.2964857, 34.2355291, 31.3135859, 34.2249119,31.3234412, 34.2187770 ];
+
+const KEREM_SHALOM = [ 31.2287852, 34.2811817,31.2298755, 34.2823192,
+31.2303773, 34.2845247,31.2306725, 34.2865011 , 31.2256201, 34.2874255, 31.2246421, 34.2849880, 31.2260673, 34.2825670, 31.2286336, 34.2811622];
+
+const SEA_XY = [31.1447443, 33.8740448, 31.2699639, 34.2303662, 31.5836415, 34.5412295, 31.6837535, 34.6163015, 31.7744546, 33.82];
+
+const MEDITERRANIAN_XY = [ 31.5935166, 34.4904426, 31.5940347, 34.4908322, 31.5944756, 34.4909800, 31.5945227, 34.4910705, 31.5948903, 34.4912895, 31.5950753, 34.4913223, 31.5953355, 34.4915346, 31.5956902, 34.4918112, 31.5958869, 34.4919295, 31.5963559, 34.4922363, 31.5966771, 34.4925119, 31.5969853, 34.4928978, 31.5972671, 34.4931070, 31.5976144, 34.4932612, 31.5980425, 34.4936542, 31.5985022, 34.4940455, 31.5987869, 34.4943462, 31.5995717, 34.4949225, 31.6000831, 34.4949825, 31.6038245, 34.4978404, 31.6045504, 34.4982421, 31.6049321, 34.4987041, 31.6051534, 34.4988902, 31.6054156, 34.4989881, 31.6056423, 34.4990947, 31.6058650, 34.4993385, 31.6059538, 34.4994323, 31.6061726, 34.4996016, 31.6062237, 34.4997341, 31.6063582, 34.4998622, 31.6066126, 34.4999648, 31.6076468, 34.5006816, 31.6081328, 34.5009149, 31.6085611, 34.5014836, 31.6091456, 34.5018138, 31.6093101, 34.5018255, 31.6111729, 34.5032075, 31.6114815, 34.5035022, 31.6116840, 34.5035646, 31.6131493, 34.5046546, 31.6158055, 34.5062944, 31.6162186, 34.5068600, 31.6171000, 34.5074082, 31.6198072, 34.5092677, 31.6200182, 34.5093186, 31.6204099, 34.5095577, 31.6272511, 34.5145516, 31.6283156, 34.5149496, 31.6288900, 34.5154538, 31.6297050, 34.5158853, 31.6298917, 34.5158776, 31.6346912, 34.4941900, 31.6349356, 34.4942490, 31.6299283, 34.5163752, 31.5384436, 34.8307804, 30.6506623, 34.5049302, 31.2196753, 34.24];
+
+const SINAI_TOP_XY = [31.1786039, 33.9303326, 31.1971562, 33.9756278, 31.1963182, 33.9797309, 31.2385241, 34.0783668, 31.2507548, 34.1022746, 31.2882943, 34.1688920, 31.2889009, 34.1696745, 31.2901111, 34.1716875, 31.2931002, 34.1764246, 31.2951816, 34.1796329,31.3086333, 34.1986980, 31.3112339, 34.2022553, 31.3131414, 34.2053787,31.3143255, 34.2066240, 31.3144951, 34.2068312,31.3147689, 34.2073629, 31.3178580, 34.2118070,31.3184140, 34.2122784, 31.3192670, 34.2133342,31.3201955, 34.2143420, 31.3209167, 34.2155668,31.3223921, 34.2175610, 31.3230677, 34.2182470,31.3232980, 34.21, 31.3234543, 34.2187606 ];
+
+const SINAI_RIGHT_XY = [ 31.3234466, 34.2187764,31.3128859, 34.2253478,31.2999596, 34.2333602,31.2971779, 34.2350980,31.2964808, 34.2355258,31.2959348, 34.2399206,31.2892925, 34.2423500,31.2780199, 34.2464752,31.2481266, 34.2571098,31.2196871, 34.2673914,31.1848125, 34.2800068,31.1565665, 34.2902314,31.1485985, 34.2931138,31.1148006, 34.3053386,31.0173912, 34.3422723,30.9818421, 34.3560559,30.9590825, 34.3647519,30.8986096, 34.3881478, 30.7702749, 34.3410221];
+
+    const SCHOOLS_MANUFACTURING_XY = [
+31.28261895751953, 34.39315724182129,
+31.1962578125, 34.290104820251464,
+31.05397375488281, 34.403701614379884,
+31.14810546875, 34.514514526367186];
+
+    const   SHERWOOD_FOREST_XY = [ 
+31.108203552246096, 34.55164831542969,
+31.39272171020508, 34.775460083007815,
+31.531694305419922, 34.56619790649414,
+31.29695837402344, 34.38099989318848];
+
+const   ORCHARD_XY   = [
+31.297603607177734, 34.38110580444336,
+31.366942840576172, 34.37513037109375,
+31.376759399414063, 34.378573211669924,
+31.410368225097656, 34.41274139404297,
+31.47776550292969, 34.48929476928711,
+31.49745166015625, 34.51704913330078,
+31.500826080322266, 34.52816421508789,
+31.50629525756836, 34.54089242553711];
+// 31.36237033081055, 34.3719853515625
+
+const   INSTRUCTOR_XY = [
+31.053287719726562, 34.40364752197266,
+31.148335510253908, 34.514704010009766,
+31.108632934570313, 34.551402435302734,
+31.011402587890625, 34.437875];
+
+const CEMETARY_XY = [
+31.309316497802733, 34.37978582763672,
+31.36746960449219, 34.374718551635745,
+31.367314208984375, 34.3732239074707,
+31.30963122558594, 34.37836042785645];
+
+/******/
+
+const   CAPITAL_XY = [ 
+31.0222522, 34.5100944,
+31.0191804, 34.5148282,
+31.0146080, 34.5080446,
+31.0186015, 34.5028216];
+
+const NORTH_BORDER_POINT=[ 31.5931511, 34.4909928 ];
+const SOUTH_BORDER_POINT = [31.3234566, 34.2187636];
+
+/// 31.3304244, 34.2275844];
+
+const NORTH_INSIDE_POINT = [ 31.5837400, 34.4831946 ];
+const SOUTH_INSIDE_POINT = [ 31.3382172, 34.2368025 ];
+
+let nSlope =  (NORTH_INSIDE_POINT[0] - NORTH_BORDER_POINT[0])/(NORTH_INSIDE_POINT[1] - NORTH_BORDER_POINT[1]);
+let sSlope = (SOUTH_INSIDE_POINT[0] - SOUTH_BORDER_POINT[0])/(SOUTH_INSIDE_POINT[1] - SOUTH_BORDER_POINT[1]);
+//■■■■
+const NORTH_BORDER_SLOPE = -0.74;
+/// (31.5425995 - 31.5935189) / (34.5640410 - 34.4904426);
+const NORTH_BORDER_ANGLE = Math.atan(nSlope)-HALF_PI;
+////// Math.atan(NORTH_BORDER_SLOPE);
+
+// 0.2630939/0.2628588 = 1.0008943965
+const NS_BORDER_SLOPE = (NORTH_BORDER_POINT[0] - SOUTH_BORDER_POINT[0] ) / (NORTH_BORDER_POINT[1] - SOUTH_BORDER_POINT[1] );
+
+// = 0.0762566 / −0.027488 = −2.7741778228
+const SOUTH_BORDER_SLOPE = -1.28;
+//// (30.9303516- 31.2959471)/( 34.3758502-34.2398991)
+
+// −1.2248272458
+const SOUTH_BORDER_ANGLE = Math.atan(sSlope)-HALF_PI;
+//////// Math.atan(SOUTH_BORDER_SLOPE);
+
+// 0.7858451617
+const NS_BORDER_ANGLE =
+Math.atan(NS_BORDER_SLOPE);
+
+/******
+■■■■
+PI/2 -  0.7858451617 =
+ 0.7849511651
+
+We need to add
+0.7849511651  radians 
+to everything to center the triangle
+
+0.7858451617 + 0.7849511651=
+PI/2 = 90 degrees
+
+So , south angle becomes
+−0.4398760807 radians
+And north angle mirrors the south at
++0.4398760807 radians
+
+Therefore, the Original north angle was
+0.4398760807 - 0.7849511651=
+−0.3450750844
+
+*/
+const radiansTo90 = HALF_PI - NS_BORDER_ANGLE;
+const adjustedSouthAngle = SOUTH_BORDER_ANGLE + radiansTo90;
+const reflectAdjustedSouthAngle = - adjustedSouthAngle;
+// const NORTH_BORDER_ANGLE = reflectAdjustedSouthAngle - radiansTo90;
+
+// −0.3594573253 radians
+// const NORTH_BORDER_SLOPE = Math.tan(NORTH_BORDER_ANGLE);
+
+/********* 
+cX + radius * cos(northAngle)= northX
+cY + radius * sin(northAngle)= northY
+cX + radius * cos(southAngle)= southX
+cY + radius * sin(southAngle)= southY
+
+northX - radius * cos(northAngle) =
+southX - radius * cos(southAngle)
+
+ -  radius * cos(northAngle) + radius * cos(southAngle) =
+southX - northX
+
+radius =
+(southX - northX) / ( cos(southAngle) - cos(northAngle)  )
+********/
+let webRadius = (SOUTH_BORDER_POINT[1] - NORTH_BORDER_POINT[1]) / (Math.cos(SOUTH_BORDER_ANGLE) - Math.cos(NORTH_BORDER_ANGLE) );
+
+let spiderwebCenterX = SOUTH_BORDER_POINT[1] - webRadius * Math.cos(SOUTH_BORDER_ANGLE);
+
+let spiderwebCenterY = SOUTH_BORDER_POINT[0] - webRadius * Math.sin(SOUTH_BORDER_ANGLE);
+                     
+
+//   ______SPIDER WEB CENTER_____
+const SPIDERWEB_CENTER = [spiderwebCenterY, spiderwebCenterX];
+
+//_______Latitude & Longitude_____
+const KADESH_BARNEA_XY = [30.9008806, 34.3929677,30.9049818, 34.3909527,30.9069270, 34.393437,30.9075625, 34.3969830,30.9045598, 34.4041019,30.9020023, 34.4033670,30.9030550, 34.3985689,30.9031821, 34.3979593,30.9022034, 34.3969746,30.9007825, 34.3929114];
+
+const BEER_MILKA_XY = [
+30.9379108, 34.4063533,
+30.9338737, 34.4105319,
+30.9313069, 34.4122478,
+30.9281759, 34.4145176,
+30.9280565, 34.4107796,
+30.9281618, 34.4085199,
+30.9298477, 34.4050142,
+30.9308247, 34.4043862,
+30.9348575, 34.4030663,
+30.9364424, 34.403636];
+
+const ECLAIRS_XY = [
+31.2236148, 34.2748694,
+31.2282970, 34.2806197,
+31.2256814, 34.2823994,
+31.2246111, 34.2844677,
+31.2202969, 34.2862249,
+31.2175131, 34.2782865,
+31.2215336, 34.2759121];
+
+const TAYLOR_THE_TAILOR_XY = [31.2229055, 34.2930213,
+31.2328281, 34.2864130, 31.2357196, 34.2889094, 31.2393508, 34.2962037, 31.2282061, 34.3036965];
+
+const  SILK_FACTORY_XY = [
+31.2282721, 34.3040130,
+31.2398961, 34.2963345,
+31.2456363, 34.3070576,
+31.2336756, 34.3149839];
+
+const WINERY_XY = [31.2826790, 34.3548318,
+31.2723630, 34.3602528,
+31.2677527, 34.3490117,
+31.2763934, 34.3440831,
+31.2773674, 34.3447503];
+
+const HATCHERY_XY = [31.2747389, 34.3435185,
+31.2632100, 34.3511853,
+31.2583972, 34.3397266,
+31.2651668, 34.3354515,
+31.2679644, 34.3386798,
+31.2691130, 34.3401148,
+31.2698148, 34.3405198,
+31.2748248, 34.3431611];
+
+const LEV_YASHAR_XY = [31.2215187, 34.3084644,
+31.2280180, 34.3041169,
+31.2307296, 34.3096231,
+31.2242298, 34.3139579];
+
+const  QUATERNION_PALACE_XY = [
+31.30183334350586, 34.246990688323976,
+31.314283416748047, 34.23590509414673,
+31.32442428588867, 34.24755102157593,
+31.31114730834961, 34.25866416168213];
+
+const  HARBOR_XY = [31.3334509, 34.2255882, 31.3309711, 34.2282000, 31.3314394, 34.2289128 , 31.3319904, 34.2294258, 31.3337651, 34.2313063, 31.3342041, 34.2319189, 31.3343158, 34.2320003, 31.3345792, 34.2323262, 31.3346706, 34.2325250, 31.3367820, 34.2304001];
+
+const  PORT_XY = [
+31.4020529, 34.2996775,
+ 31.3969890, 34.3037870,
+31.3964727, 34.3028348,
+31.3963502, 34.3026494,
+31.3957698, 34.3020643,
+31.3955744, 34.3016322,
+31.3950326, 34.3009200,
+31.3948970, 34.3006273,
+31.3946019, 34.3002686,
+31.3871414, 34.2920701,
+31.3861551, 34.2908510,
+31.3911169, 34.2859657];
+
+/**********************
+logFailure
+**********************/
+function logFailure (failureNumber, message){
+     alert("Failure " +  failureNumber + ": "+ message);
+}//  end function
+
+/**********************
+checkboxChanged
+**********************/
+function checkboxChanged(theCheckbox){
+    SHOW_LABELS = document.getElementById("showLabelCheckbox").checked;
+}//  end function
+
+/**********************
+   clearCanvas
+**********************/
+function clearCanvas(){
+    
+ CURRENT_CONTEXT.clearRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+}//  end function
+
+const INFO_SELECTOR = document.getElementById("infoSelector");
+
+/**********************
+showInformation
+**********************/
+function showInformation(theButton){
+    const integerValue = parseInt(theButton.value);
+   
+    CURRENT_CONTEXT = INSET_CONTEXT;
+
+    switch(integerValue){
+
+    case 1:
+        clearCanvas();
+break;
+case 2:
+    
+    clearCanvas();
+   drawAzzanBorough_XYWHAngle(CLOSE_UP_X , CLOSE_UP_Y, CLOSE_UP_WIDTH,   CLOSE_UP_HEIGHT, 0);
+break;
+case 3:
+    //___ SchoolAndFactory_______
+    clearCanvas();
+    drawSchoolAndFactory_XYWHAngle(CLOSE_UP_X , CLOSE_UP_Y, CLOSE_UP_WIDTH,   CLOSE_UP_HEIGHT, 0);
+break;
+case 4:
+    clearCanvas();
+    drawSchoolAndFactoryQuad_XYWHAngle(CLOSE_UP_X , CLOSE_UP_Y, CLOSE_UP_WIDTH, CLOSE_UP_HEIGHT, 0);
+break;
+case 5:
+     alert("5");
+break;
+case 6:
+     alert("6");
+break;
+case 7:
+     alert("7");
+break;
+case 8:
+     alert("8");
+break;
+case 9:
+     alert("9");
+break;
+
+}
+  CURRENT_CONTEXT = MAP_CONTEXT;
+} // end function
+
+/**********************
+mapLatitudeLongitudeToCanvasXY
+Convert
+
+**********************/
+function mapLatitudeLongitudeToCanvasXY(latitude, longitude){
+   output = new Array(2);
+   output[0] = (longitude - MAP_OFFSET_X) * MAP_SCALE;
+   output[1] = CANVAS_HEIGHT - (latitude - MAP_OFFSET_Y) * MAP_SCALE;
+    return output;
+} // end function
+
+/**********************
+mapLatitudeLongitudeToCanvasXY
+Convert
+**********************/
+function canvasXYToLatitudeLongitude (x,y){
+   output = new Array(2);
+
+   // longitude 
+   output[1] = x/MAP_SCALE  + MAP_OFFSET_X;
+
+   // latitude
+   output[0] = MAP_OFFSET_Y + (CANVAS_HEIGHT-y)/MAP_SCALE;
+
+    return output;
+} // end function
+
+/**********************
+rotatePoint_centerXcenterYdXdYAngle
+**********************/
+function rotatePoint_centerXcenterYdXdYAngle(cX, cY, x, y, angle){
+    output = new Array(2);
+    output[0] = cX;
+    output[1] = cY;
+
+ if(angle == 0){ // No rotation
+    output[0] += x;
+    output[1] += y;
+    return output;
+  }
+//__________
+var oldAngle = HALF_PI;
+
+if(y != 0){
+   oldAngle = Math.atan( x/y);
+  // correct atan quadrant error
+   if(y < 0){
+      oldAngle += Math.PI;
+    }
+}
+else if(x < 0){
+  oldAngle = - HALF_PI;
+}
+    const newAngle = oldAngle + angle;
+    const lineLength = Math.sqrt(x*x + y*y);
+    output[0] += Math.sin(newAngle) * lineLength;
+    output[1] += Math.cos(newAngle) * lineLength;
+    return output;
+} // end function
+
+/**********************
+fillPolygon
+with xy positions of array
+**********************/
+function fillPolygon (array){
+if( ! array){
+   logFailure(922, "no array");
+    return;
+}
+
+let length = array.length;
+
+if(length < 4){
+   logFailure(372, "length is " + length );
+   return;
+}
+
+CURRENT_CONTEXT.beginPath();
+CURRENT_CONTEXT.moveTo(array[0], array[1]);
+
+for(i = 2 ; i < length ; i+=2 ){
+    CURRENT_CONTEXT.lineTo(array[i], array[i+1]);
+}
+CURRENT_CONTEXT.lineTo(array[0], array[1]);
+
+CURRENT_CONTEXT.fill();
+} // end function
+
+/**********************
+findAverageMapPosition
+**********************/
+function findAverageMapPosition(pointArray) { 
+
+var outputArray = new Array(2);
+outputArray[0] = 0.0;
+outputArray[1] = 0.0;
+
+if(! pointArray){
+   logFailure(740224, "pointArray bad");
+   return outputArray ;
+}
+
+const arrayLength = pointArray.length;
+if( arrayLength < 2){
+   logFailure(7094, "pointArray bad: " + arrayLength);
+   return outputArray ;
+}
+
+for(let i = 0 ; i < arrayLength ; i+=2){
+   outputArray[0] += pointArray[i];
+   outputArray[1] += pointArray[i+1];
+}
+outputArray[0] = 2 * outputArray[0] / arrayLength;
+outputArray[1] = 2 * outputArray[1] / arrayLength;
+
+  return outputArray ;
+ } // end function
+
+/**********************
+fillRectangle_XYWHAngle
+X & Y are at the Center of the rectangle
+**********************/
+function fillRectangle_XYWHAngle(x, y, width, height, angleOffset){
+
+const dX = width/2.0;
+const dY = height/2.0;
+
+if( dX<=0 || dY<=0){
+    logFailure(8337, "dX " + dX + "   dY " + dY);
+   return;
+}
+
+// 4 x  & 4 y
+var pointArray = new Array(8);
+const rectangleRadius = Math.sqrt(dX*dX + dY*dY);
+const oldAngle = Math.atan(dX/dY);
+
+var newAngle =  0;
+var multiplier = 1;
+var plusPI = 0.0;
+
+for(let i = 0 ; i < 8 ; i+=2){
+if(i > 3){
+   plusPI = Math.PI;
+}
+ 
+newAngle = multiplier * oldAngle + plusPI + angleOffset;
+
+  pointArray[i] = x + Math.sin(newAngle) * rectangleRadius;
+  pointArray[i+1] = y + Math.cos(newAngle) * rectangleRadius;
+
+   multiplier = -1 * multiplier;
+} // end loop
+
+    fillPolygon(pointArray);
+}// end function
+
+/**********************
+fillRectangleQuad_XYdXdYWHAngle
+X & Y are at the Center of the rectangle
+**********************/
+function fillRectangleQuad_XYdXdYWHAngle(x, y, dX, dY, width, height, angleOffset){
+
+ 
+
+dX = Math.abs(dX);
+    dY = Math.abs(dY);
+    let firstX = x-dX;
+    let firstY = y-dY;
+    let lastX = x+dX+2;
+    let lastY = y+dY+2;
+
+for(let nextX = firstX ; nextX <= lastX ; nextX += 2*dX){
+
+   for(let nextY = firstY ; nextY <= lastY; nextY += 2*dY){
+
+ if(angleOffset !=0){
+            ///rotated = 
+            alert("477848555 NOT IMPLEMENTED");
+          }
+         else{
+            fillRectangle_XYWHAngle(nextX, nextY, width, height, angleOffset);
+          }
+        } // inner loop
+  } // outer loop
+
+}// end function
+
+/**********************
+drawLabel_XYWText
+**********************/
+function drawLabel_XYWText(x, y, width, labelText){
+
+if(width < 4 ){
+    logFailure(695, "width:"+width);
+    return;
+}
+if( ! labelText || labelText.length < 1){
+    logFailure(77636, "labelText:" + labelText);
+    return;
+}
+
+var fontWidth = 0;
+var fontHeight = 0;
+
+var widthToUse = width * 0.9;
+var fontMeasurement;
+value = 6;
+
+while(fontWidth < widthToUse){
+    value += 2;
+    CURRENT_CONTEXT.font = "" + value + "px Arial";
+   
+    fontMeasurement = CURRENT_CONTEXT.measureText(labelText);
+
+fontWidth = fontMeasurement.width;
+
+} // end while
+
+fontHeight = fontMeasurement.fontBoundingBoxAscent;
+   
+CURRENT_CONTEXT.fillStyle = "white";
+fillRectangle_XYWHAngle(x, y, width, fontHeight * 1.25, 0);
+CURRENT_CONTEXT.fillStyle = "black";
+
+// alert("draw Label3 " + fontHeight);
+ CURRENT_CONTEXT.fillText( labelText, x - fontWidth/2, y + fontHeight/2.5);
+
+} // end function
+
+/**********************
+drawLabelOnMap
+
+**********************/
+function drawLabelOnMap(latitude, longitude, width, labelText){
+
+const x = (longitude - MAP_OFFSET_X) * MAP_SCALE;
+const y = CANVAS_HEIGHT - (latitude - MAP_OFFSET_Y) * MAP_SCALE;
+
+drawLabel_XYWText(x, y, width, labelText);
+} // end function
+
+/**********************
+drawArrowOnMap
+**********************/
+function drawArrowOnMap(latitude0, longitude0, latitude1, longitude1){
+
+    const x0 = (longitude0 - MAP_OFFSET_X) * MAP_SCALE;
+    const y0 = CANVAS_HEIGHT - (latitude0 - MAP_OFFSET_Y) * MAP_SCALE;
+    const x1 = (longitude1- MAP_OFFSET_X) * MAP_SCALE;
+    const y1 = CANVAS_HEIGHT - (latitude1 - MAP_OFFSET_Y) * MAP_SCALE;
+
+    drawArrow(x0, y0, x1,y1);
+} // end function
+
+/**********************
+drawArrow
+**********************/
+function drawArrow(x0, y0, x1,y1){
+
+    const dY = (y1-y0);
+    const dX =  (x1-x0) 
+    if(dY == 0 && dX ==0){
+        logFailure(7372, "Bad arrow length");
+    }
+    const arrowLength = Math.sqrt(dY*dY + dX*dX);
+    const tipRadius = Math.sqrt(arrowLength)*3.0;
+    arrowAngle = HALF_PI;
+
+    if(dY != 0){
+        arrowAngle = Math.atan( dX/dY);
+    // correct atan quadrant errot
+    if( dY < 0){
+       arrowAngle += Math.PI;
+    }
+  }
+  else if( dX < 0){
+     arrowAngle = - HALF_PI;
+  }
+    
+   CURRENT_CONTEXT.strokeStyle = "black";
+// Real canals are 50 to 200 feet wide
+// = 0.009 to 0.038 miles
+// big canals up to 480 feet wide
+// distance canal-to-canal about 0.3   miles
+
+   CURRENT_CONTEXT.lineWidth = Math.max(1, Math.pow(arrowLength, 0.5)/12.0);
+   CURRENT_CONTEXT.beginPath();
+   CURRENT_CONTEXT.moveTo(x0, y0);
+   CURRENT_CONTEXT.lineTo(x1,y1);
+   CURRENT_CONTEXT.stroke();
+
+//____arrow head____
+newAngle = arrowAngle - Math.PI * 0.92;
+CURRENT_CONTEXT.beginPath();
+CURRENT_CONTEXT.moveTo(x1,y1);
+CURRENT_CONTEXT.lineTo(x1 + Math.sin(newAngle)* tipRadius, y1 + Math.cos(newAngle)* tipRadius);
+
+CURRENT_CONTEXT.stroke();
+
+newAngle = arrowAngle + Math.PI * 0.92;
+CURRENT_CONTEXT.beginPath();
+CURRENT_CONTEXT.moveTo(x1,y1);
+CURRENT_CONTEXT.lineTo(x1 + Math.sin(newAngle)* tipRadius, y1 + Math.cos(newAngle)* tipRadius);
+
+CURRENT_CONTEXT.stroke();
+} // end function
+
+/**********************
+drawPin
+**********************/
+function drawPin(x,y, text){
+
+   CURRENT_CONTEXT = PIN_CONTEXT;
+   CURRENT_CONTEXT.fillStyle="rgb(200,0,0)";
+   CURRENT_CONTEXT.strokeStyle = "black";
+   CURRENT_CONTEXT.lineWidth = 1;
+   CURRENT_CONTEXT.beginPath();
+   CURRENT_CONTEXT.moveTo(x,y);
+   //xyArray = new Array();
+   var nextX;
+   var nextY;
+   const pinSize = MAP_SCALE/200;
+   let mAdvance = pinSize/1000.0;
+   for(let m=0.0 ; m<= TWO_PI; m+= mAdvance){
+     sine = Math.sin(m);
+      if(m> HALF_PI && m < ONE_N_HALF_PI){
+          nextX = x + sine*pinSize/2;
+       }
+       else{
+           nextX = x + Math.pow(sine,3)*pinSize/2;
+         }
+     nextY = y + (Math.cos(m) - 1) * pinSize;
+//xyArray.push();
+//xyArray.push();
+     CURRENT_CONTEXT.lineTo(nextX,nextY);
+   }// end loop
+
+  CURRENT_CONTEXT.fill();
+ CURRENT_CONTEXT.stroke();
+ let labelWidth = pinSize* text.length/3;
+ drawLabel_XYWText(x, y-pinSize*2, labelWidth, text);
+
+   CURRENT_CONTEXT = MAP_CONTEXT;
+} // end function
+
+/**********************
+drawLabelsArrows_NamesRectanglesScaleXYWHAngle
+ArrowsLabels
+**********************/
+function drawLabelsArrows_NamesRectanglesScaleXYWH(names, rectangles, scale, x, y, width, height){
+  drawLimit = MAP_SCALE/4;
+if ( ! SHOW_LABELS ||  width < drawLimit || height < drawLimit){
+    return false;
+}
+var nextString = "Hi :)";
+var arrowStartX;
+var arrowStartY;
+var arrowEndX;
+var arrowEndY;
+const shrunkWidth = width/scale;
+const shrunkHeight = height/scale;
+
+let totalNames = names.length;
+var labelWidth;
+let labelDistance = shrunkWidth/4; 
+
+//____loop____
+for(n = 0 ; n < totalNames ; n++){
+
+     nextString = names[n];
+   if(nextString.includes("*")){ // do not print
+         continue;
+     }
+    n4 = n*4;
+    
+    arrowEndY = y - shrunkHeight * rectangles[n4+1];
+    
+
+arrowEndX = x +  shrunkWidth * rectangles[n4];
+arrowStartY = arrowEndY - shrunkHeight * rectangles[n4+1] * 0.35;
+
+  if(rectangles[n4+1] == 0){
+     arrowStartY += ((n%2) - 0.5) * height/7;
+  }
+  labelWidth = nextString.length * width/80;
+
+  labelDistance = labelWidth*0.6;
+
+let positiveX = rectangles[n4]>0;
+//ggggggg
+ if(Math.abs(rectangles[n4])<shrunkWidth*180){
+if(positiveX){
+    arrowStartX = arrowEndX + labelWidth*0.82;
+  }
+  else{
+   arrowStartX = arrowEndX - labelWidth*0.82;
+}
+}
+  else {
+if(positiveX){
+    arrowStartX = x+(width + labelWidth)/2.04;
+  }
+  else{
+       arrowStartX = x-(width + labelWidth)/2.04;
+  }
+}
+    
+    drawArrow(arrowStartX, arrowStartY,arrowEndX,  arrowEndY);
+    drawLabel_XYWText(arrowStartX, arrowStartY, labelWidth, nextString);
+   }// end loop
+
+     return true;
+   }// end function
+
+/**********************
+drawMapFeature
+with xy positions of array
+**********************/
+function drawMapFeature (array){
+if( ! array){
+   logFailure(545, "no array");
+   return;
+}
+
+arraySize = array.length;
+
+if( arraySize < 4 ){
+   logFailure(695,"bad array size  " + arraySize);
+   return;
+}
+
+    myArray = new Array(arraySize);
+    for(let i = 0 ; i < arraySize; i+=2 ){
+ 
+    myArray[i] = (array[i+1] - MAP_OFFSET_X) * MAP_SCALE;
+///                                     2000              (34       -   33.9) * 1000
+    myArray[i+1] = CANVAS_HEIGHT - (array[i] - MAP_OFFSET_Y) * MAP_SCALE;
+
+    }// end loop
+
+    fillPolygon(myArray);
+} // end function
+
+/**********************
+fillOval_XYWHAngle
+**********************/
+function fillOval_XYWHAngle(x, y, width,height, angle){
+    if(width <= 0 || height <= 0){
+       logFailure(67096 , "W: " + width +"  H:" + height);
+       return;
+   }
+    smallDimension = Math.min(width,height);
+    const radiusWide = width/2.0;
+    const radiusHigh = height/2.0;
+    const mAdvance = 0.2 / smallDimension;
+     var n;
+    CURRENT_CONTEXT.moveTo(x,y);
+  
+      const mEnd = TWO_PI + 0.01;
+
+    CURRENT_CONTEXT.beginPath();
+   // Draw loop
+    for(let m = 0 ; m <= mEnd ; m += mAdvance){
+      n = m - angle;
+
+    a = x + Math.sin(n) * radiusWide;
+    b = y - Math.cos(n) * radiusHigh;
+
+    CURRENT_CONTEXT.lineTo(a, b);
+   }
+
+     CURRENT_CONTEXT.fill();
+}// end function
+
+/**********************
+fillHeart_XYDiameterAngle
+**********************/
+function fillHeart_XYDiameterAngle(x, y, diameter, angle){
+    if(diameter <= 0){
+       logFailure(6686 , "D: " + diameter);
+       return;
+   }
+
+    const radius = diameter/2.0;
+    const mAdvance = 0.1 / radius;
+
+  
+    CURRENT_CONTEXT.moveTo(x,y);
+    CURRENT_CONTEXT.beginPath();
+    var radiusMultiplier = 0.0;
+    var newRadius = 0.0;
+    var mReflect = 0.0 
+    const mEnd = TWO_PI + 0.01;
+
+   // Draw loop
+    for(let m = 0.0 ; m <= mEnd ; m += mAdvance){
+      n = m - angle;
+
+     if(m<=Math.PI){
+        mReflect = m;
+    }
+    else{
+      mReflect =  TWO_PI - m;
+   }
+
+if(mReflect<=QUARTER_PI){
+radiusMultiplier = Math.pow(mReflect /QUARTER_PI , 0.4);
+}
+else{  // sin(quarterpi) = 0.707
+    diff = QUARTER_PI - mReflect;
+    //                                    0.5944
+    radiusMultiplier =  Math.pow(mReflect/ Math.PI, 1.5) + 0.875/ (1.0 + Math.pow(diff, 2) ); //  1.6168
+}
+
+    newRadius = radius * radiusMultiplier;
+
+    a = x + Math.sin(n) * newRadius;
+    b = y - Math.cos(n) * newRadius;
+
+    CURRENT_CONTEXT.lineTo(a, b);
+   }
+
+  CURRENT_CONTEXT.fill();
+}// end function
+
+/**********************
+drawSchoolAndFactory_XYWHAngle
+**********************/
+function drawSchoolAndFactory_XYWHAngle(x, y, width, height, angle){
+
+if(width<=0 || height<=0){
+    logFailure(80067, "width "+ width +"  , height "+ height);
+}
+
+const buildingNames = ["Green of the land*", "Factory", "Kitchen", "Glass Cafeteria", "School", "CornerProtector*", "CornerProtector*", "CornerProtector*", " CornerProtector*", "Green in school*", "Horse Stables", "Dog Kennel", "Running Track   176.8x92.35 meters", "Running TrackInner360ftx160ft*", "Polo field 274.3x146.3 meters", "Olympics Training 92x92 meters", "Tennis courts 23.8X8.2 meters",
+ "TC*",  "TC*", "TC*",  "TC*", "TC*",  "TC*", "TC*",  "TC*", "TC*",  "TC*", "TC*",    "Sports equipment storage", "RunTrackL*","RunTrackR*", "Girls locker room", "Boys Locker room", "Archery Field 70.1x35.05 meters", "Equestrian Show Jump fields 20X40 meters", "ESJF*", "ESJF*", "ESJF*", "Equestrian Dressage Fields 20x60 meters", "EDF*", "Lawn care storage", "Hospital", "Swimming Pool 50x25 meters", "Woodshop", "Gym", "Aquaculture Greenhouse", "Aquaculture Greenhouse", "High Jump", "Pole vault 44x4.5 meters", "polevault land*", "Long Jump", "Longjump land*", "Kayak storage"];
+
+/**
+
+Ceramics   CircusAcrobatics
+**/
+
+//    x,y,width,height  in meters
+const rectangleArray = [0,0,620,620,     0,237.7,579.1,121.9,   0,152.4,61,30.5,   0,137.2,182.9,15.2,   0,0,182.9,182.9,    73.2,70.1,45.7,45.7,  73.2,-73.2,45.7,45.7,    -73.2,73.2,45.7,45.7,   -73.2,-73.2,45.7,45.7,   0,0,106.7,106.7,    173.7,-210.3,16,122,    173.7,-149.4,16,16,    243.8,0,92.4,176.8,    243.8,0,48.8,109.7,    0,-207.3,274.3,146.3,    -243.8,0,92,92,     -274.3,85.3,23.8,8.2,    -274.3,76.2,23.8,8.2,    -274.3,67.1,23.8,8.2,   -274.3,57.9,23.8,8.2,   -246.9,85.3,23.8,8.2,   -246.9,76.2,23.8,8.2,   -246.9,    67.1,23.8,8.2,   -246.9,57.9,23.8,8.2,   -219.5,85.3,23.8,8.2,   -219.5,76.2,23.8,8.2,  -219.5,67.1,23.8,8.2,  -219.5,57.9,23.8,8.2,    -243.8,-48.8,91.4,12.2,     204.2,0,12.2,73.2,    283.5,0,12.2,73.2,    -152.4,-76.2,30.5,30.5,    152.4,-76.2,30.5,30.5,   250,-128,70.1,35.1,    228.5,-280,39.9,20.1,   270,-280,39.9,20.1,   228.5,-250.2,39.9,20.1,    270,-250.2,39.9,20.1,    250,-185,60,20,  250,-215,60,20, -289.6,-91.4,15.2,45.7,-259.1,131.1,61,61,-243.8,-91.4,50,25,  120,0,20,40,   140,0,20,40,   -155,-305,300,5,  -305,-155,5,300,   284,120,3,5,   224,130,44,4.5,   198,130,6.5,6.5,    230,106,48.78,1.22,    202,106,7.01,2.74,    282,158,8,20];
+
+const SCALE_DOWN = 620;
+
+const colorArray = [10, 200,20,   88,88,96,  49,80,160,  50,140,182, 250,250,220,   180,180,180,  180,180,180,  180,180,180,  180,180,180,    30,200,50,   142,70,20,  194,135,25,    0,148,14,   0,220,30,   0,100,0,   220,220,180,   30,160,92,  30,160,92,  30,160,92,   30,160,92,   30,160,92,  30,160,92,  30,160,92,  30,160,92,   30,160,92,   30,160,92,   30,160,92,  30,160,92,    20,20,160,   250,127,55,   250,127,55,   222,99,99,   99,99,222, 20,110,30,   5,100,5,  5,100,5,  5,100,5,   5,100,5,   203,150,112,  203,150,112,   220,0,40,  220,220,200,    136,208,240,   120,100,0,  180,80,50, 120,120,240,  120,120,240,   0,40,160,   0,120,18,   0,40,160,     220,186,142,  246,215,176,      240,240,0,   0,0,0,0,0,0];
+
+// blue  black  red  yellow  green
+const olympicRGB = [62,118,236,  0,0,0,  255,0,0,  255,206,1,   23,154,19,  255,127,57,   255,127,57]
+
+const rectangleCount = rectangleArray.length/4;
+var rectangleX;
+var rectangleY;
+var w;
+var h;
+var styleText;
+var p4;
+var p3;
+var returnArray;
+
+let shrunkWidth = width/SCALE_DOWN;
+let shrunkHeight = height/SCALE_DOWN;
+
+//____Drawing loop____
+for(let p = 0 ; p < rectangleCount ; p++){
+   p4 = p*4;
+   p3 = p*3;
+
+   styleText = "rgb(" + colorArray[p3] + "," + colorArray[p3+1] + ","  + colorArray[p3+2] +  ")";
+
+   CURRENT_CONTEXT.fillStyle = styleText;
+
+   fromCenterX = shrunkWidth * rectangleArray[p4];
+   fromCenterY = - shrunkHeight * rectangleArray[p4+1];
+
+   if(angle == 0){
+      rectangleX = x + fromCenterX;
+      rectangleY = y + fromCenterY;
+   }
+   else{
+   returnArray = rotatePoint_centerXcenterYdXdYAngle(x, y,  fromCenterX, fromCenterY, angle);
+    rectangleX = returnArray[0] ;
+    rectangleY = returnArray[1];
+}
+   w = shrunkWidth * rectangleArray[p4+2];
+   h = shrunkHeight * rectangleArray[p4+3];
+
+  fillRectangle_XYWHAngle(rectangleX, rectangleY, w, h, angle);
+
+} // end loop
+
+//____olympic rings_&_Running track___
+var circleX;
+var circleY;
+let circleSize = shrunkWidth*9.144;
+let trackSize = shrunkWidth*39.624; //60=(160-40)/2
+
+CURRENT_CONTEXT.lineWidth = 1+circleSize/6;
+let circleAdvance = circleSize * 2.4;
+
+const totalRings = olympicRGB.length/3;
+let flipTheRings = angle > HALF_PI || angle < -HALF_PI;
+
+//_____Drawing loop_____
+for(p= 0 ; p <  totalRings; p++){
+    p3 = p*3;
+
+  if(p>4){ // running track rings
+       CURRENT_CONTEXT.lineWidth = 1+trackSize/3.0;
+
+      fromCenterX = shrunkWidth * 243.84;
+      fromCenterY = shrunkHeight * 73.152 * (p - 5.5);
+     
+  }
+  else if(p<3){
+     fromCenterY =  -  circleSize*0.5; // feet
+     fromCenterX =  - shrunkWidth * 265.176 + p * circleAdvance;
+}
+else{ // last 2 rings
+   fromCenterY =    circleSize*0.5;
+   fromCenterX = - shrunkWidth * 265.176 + (p-2.5) * circleAdvance;
+  }
+
+returnArray = rotatePoint_centerXcenterYdXdYAngle(x, y,  fromCenterX, fromCenterY, angle);
+    circleX = returnArray[0] ;
+    circleY = returnArray[1];
+ 
+styleText = "rgb(" + olympicRGB[p3] + "," + olympicRGB[p3+1] + ","  + olympicRGB[p3+2] +  ")";
+CURRENT_CONTEXT.strokeStyle = styleText;
+
+CURRENT_CONTEXT.beginPath();
+
+if(p<5){ // Olympics
+    CURRENT_CONTEXT.arc(circleX, circleY, circleSize, 0, TWO_PI);
+}
+else{ // Running track
+ CURRENT_CONTEXT.arc(circleX, circleY, trackSize, angle +(p-4)*Math.PI, angle+(p-5)*Math.PI);
+}
+   CURRENT_CONTEXT.stroke();
+} // end loop
+
+//_____Cricket field_____
+// foot == 0.3048 meters
+CURRENT_CONTEXT.fillStyle = "rgb(0,160,20)";
+
+// outeField  diameter = 152.4 meter
+let fieldDiameter = 152.4*shrunkWidth;
+let cricketX = - 221 * shrunkWidth;
+let cricketY = 207.264 * shrunkHeight;
+
+rotated = rotatePoint_centerXcenterYdXdYAngle(x,y, cricketX, cricketY  ,angle);
+
+cricketX = rotated[0];
+cricketY = rotated[1];
+
+CURRENT_CONTEXT.beginPath();
+CURRENT_CONTEXT.arc(cricketX, cricketY, fieldDiameter/2.0, 0, TWO_PI);
+CURRENT_CONTEXT.fill();
+
+CURRENT_CONTEXT.fillStyle = "rgb(0,190,22)";
+
+let infieldWidth = 54.864 * shrunkWidth;
+let infieldHeight = 74.9808 * shrunkHeight;
+
+fillOval_XYWHAngle(rotated[0], rotated[1], infieldWidth, infieldHeight, angle);
+  
+// pitch is 22.56 m x 3.66m in width. 
+let pitchWidth =  3.66 * shrunkWidth;
+let pitchHeight = 22.56 * shrunkHeight;
+CURRENT_CONTEXT.fillStyle = "rgb(216,96,42)";
+ fillRectangle_XYWHAngle(rotated[0], rotated[1], pitchWidth, pitchHeight, angle);
+
+// ____HighJump  20 meter  radius halfCircle
+let highJumpX  = shrunkWidth * 281;
+let highJumpY = - shrunkHeight * 120;
+let highJumpRadius = 20 * shrunkWidth;
+
+rotated = rotatePoint_centerXcenterYdXdYAngle(x,y, highJumpX, highJumpY  ,angle);
+ CURRENT_CONTEXT.fillStyle = "rgb(205,140,70)";
+ CURRENT_CONTEXT.beginPath();
+CURRENT_CONTEXT.arc(rotated[0], rotated[1], highJumpRadius, angle+ HALF_PI, angle + ONE_N_HALF_PI);  
+CURRENT_CONTEXT.fill();
+
+//_____Theatre Auditorium_____
+CURRENT_CONTEXT.fillStyle = "rgb(200,40,40)";
+heartDiameter = 60.96 * shrunkWidth;
+heartAngle = angle;
+if(heartAngle > HALF_PI || heartAngle < -HALF_PI){
+  heartAngle += Math.PI;
+}
+fillHeart_XYDiameterAngle(x,y, heartDiameter,heartAngle);
+
+//____Arrrows&Labels_________
+ 
+labelsDrawn = drawLabelsArrows_NamesRectanglesScaleXYWH(buildingNames, rectangleArray, SCALE_DOWN, 
+x, y, width, height);
+
+if( ! labelsDrawn){
+     return;
+}
+nextString = "Cricket field";
+labelWidth = nextString.length * 12;
+
+arrowStartX = cricketX-labelWidth;
+arrowStartY =  cricketY+labelWidth;
+
+drawArrow(arrowStartX, arrowStartY, cricketX,  cricketY);
+   
+    drawLabel_XYWText(arrowStartX, arrowStartY, labelWidth, nextString);
+
+nextString = "Auditorium";
+labelWidth = nextString.length*12;
+drawLabel_XYWText(x,y+height/20, labelWidth, nextString);
+
+}// end function
+
+/**********************
+drawSchoolAndFactoryQuad_XYWHAngle
+**********************/
+function drawSchoolAndFactoryQuad_XYWHAngle(x, y, width, height, angle){
+
+var centerX;
+var centerY;
+var dX;
+var dY;
+
+let halfWidth = width/2.0;
+let halfHeight = height/2.0;
+
+  for(let u = 0 ; u<2 ; u++){
+    dX = (u -0.5) * halfWidth;
+    for(let v = 0 ; v < 2 ; v++){
+    
+       dY = (v - 0.5) * halfHeight;
+       
+       newXY = rotatePoint_centerXcenterYdXdYAngle(x, y, dX, dY, angle); 
+
+     drawSchoolAndFactory_XYWHAngle(newXY[0], newXY[1], halfWidth, halfHeight, angle + v* Math.PI);
+    } // end inner loop
+} // end loop
+
+labelWidth = width/5;
+
+if( ! SHOW_LABELS || width < 500){
+   return;
+}
+
+///____Arrows & Labels___
+     drawArrow(x+halfWidth, y, x+halfWidth*0.1,y);
+     drawArrow(x+halfWidth, y, x,y+height*0.2);
+     drawArrow(x+halfWidth, y, x,y-height*0.2);
+
+drawLabel_XYWText(x+halfWidth,y, labelWidth, "Walkways");
+drawLabel_XYWText(x,y+halfHeight*1.05, width*0.8, "<---------- 1.3 Kilometers canal to canal-------->");
+
+}// end function
+
+/**********************
+drawSchoolAndFactoryOnMap_Angle
+**********************/
+function drawSchoolAndFactoryOnMap_Angle(latitude, longitude, angle ){
+
+const x = (longitude - MAP_OFFSET_X) * MAP_SCALE;
+const y = CANVAS_HEIGHT - (latitude - MAP_OFFSET_Y) * MAP_SCALE;
+
+const width = MAP_SCALE/1000.0;
+const height = width;
+
+drawSchoolAndFactory_XYWHAngleLabel(x,y, width, height, angle, false);
+
+}// end function
+
+/**********************
+drawWall_XYWHAngle
+ KEREN SHALOM vineyard
+Winery
+Silk Factory
+Graveyard
+
+**********************/
+function drawWall_XYWHAngle(x, y, width, height, angle){
+
+}// end function
+
+/**********************
+drawCapital_XYWHAngle
+Senate, Courthouse, Rose garden,  Hospital, Culture center,Police headquarters, 
+Prison, 
+**********************/
+function drawCapital_XYWHAngle(x, y, width, height, angle){
+
+}// end function
+
+/**********************
+drawAzzan_XYWHAngle
+  CityBlocks, Quaternion Palace, Harbor, Cruise Port, Hotels, 
+Stadium, Lev Yashar, 
+
+**********************/
+function drawAzzan_XYWHAngle(x, y, width, height, angle){
+
+/// drawAzzanBorough_XYWHAngle
+
+}// end function
+
+/**********************
+drawAzzanBorough_XYWHAngle
+ChickenCoops,Garden
+Arena
+**********************/
+function drawAzzanBorough_XYWHAngle(x, y, width, height, angle){
+    if(width<=0 || height<=0){
+        logFailure(83457, "width "+ width +"  , height "+ height);
+    }
+    const buildingNames = ["Green of the land*", "Study Center", "CornerProtector*", "CornerProtector*", "CornerProtector*","CornerProtector*", "Study Center patio*", "Church", "Church cross 1*",  "Church cross 2*", "City Hall", "Hospital", "Hospital", "Courthouse", "Orphanage","Orphanage", "Library", "????"];
+
+//    x,y,width,height  in meters
+const rectangleArray = [0,0,1300,1300,   0,0,100,100,  40,40,26,26, -40,40,26,26 ,  40,-40,26,26,  -40,-40,26,26,  0,0,32,32 ,  0,80,8,42, 0,78,20,8,   0,90,20,8,  
+-22,230,16,50,   -14,-220,20,80,  14,-220,20,80 ,  22,230,16,50,    -18,-310,18,36,   18,-310,18,36,  22,160,16,50, -22,160,16,50];
+
+const SCALE_DOWN = 1300;
+
+const colorArray = [ 0,80,2,    240,240,240,   220,220,220, 220,220,220, 220,220,220, 220,220,220,  0,180,50,  120,120,180,   120,120,180,     120,120,180,  0,0,190,  190,50,50,   190,50,50, 100,100,120,   20,0,228, 20,0,208,  200,0,208, 200,0,208,  200,80,0,  200,80,0,   200,80,0, 200,80,0,  200,0,200, 200,0,208,  200,0,200, 200,0,208,  200,0,208, 200,0,208, 200,0,208,  200,80,0,    55,55,220,  55,55,220, 0,0,0];
+
+const rectangleCount = rectangleArray.length/4;
+var rectangleX;
+var rectangleY;
+var w;
+var h;
+var styleText;
+var p4;
+var p3;
+var returnArray;
+
+let shrunkWidth = width/SCALE_DOWN;
+let shrunkHeight = height/SCALE_DOWN;
+
+//____Drawing loop____
+for(let p = 0 ; p < rectangleCount ; p++){
+   p4 = p*4;
+   p3 = p*3;
+
+   styleText = "rgb(" + colorArray[p3] + "," + colorArray[p3+1] + ","  + colorArray[p3+2] +  ")";
+
+   CURRENT_CONTEXT.fillStyle = styleText;
+
+   fromCenterX = shrunkWidth * rectangleArray[p4];
+   fromCenterY = - shrunkHeight * rectangleArray[p4+1];
+
+   if(angle == 0){
+      rectangleX = x + fromCenterX;
+      rectangleY = y + fromCenterY;
+   }
+   else{
+   returnArray = rotatePoint_centerXcenterYdXdYAngle(x, y,  fromCenterX, fromCenterY, angle);
+    rectangleX = returnArray[0] ;
+    rectangleY = returnArray[1];
+}
+   w = shrunkWidth * rectangleArray[p4+2];
+   h = shrunkHeight * rectangleArray[p4+3];
+
+  fillRectangle_XYWHAngle(rectangleX, rectangleY, w, h, angle);
+} // end loop
+
+//___Townhome Business_____
+let sharedyardWidth = shrunkWidth * 10; 
+let backyardWidth = shrunkWidth * 11; 
+let townhomeWidth = shrunkWidth * 9; 
+let frontyardWidth = shrunkWidth * 7; 
+let walkwayWidth = shrunkWidth * 16; 
+var widthToUse; 
+let townhomeHeight = shrunkHeight * 25;
+let thHeightNoKids = townhomeHeight*0.75;
+
+let thHeight8 = townhomeHeight*8;
+let thHeight4 = townhomeHeight*4;
+var blockHeight;
+let parkHeight = shrunkHeight*42;
+
+ let fullWidth = 2*frontyardWidth + 2*townhomeWidth+walkwayWidth+2*backyardWidth+sharedyardWidth ;
+
+  const halfWidth = width/2;
+  const halfHeight = height/2;
+  let firstX = x - halfWidth ;
+  let lastX = x + halfWidth ;
+  let xDiff = 0;
+
+  let firstY = y - halfHeight + thHeight8/2 + walkwayWidth; 
+  let lastY = y + halfHeight -  thHeight8/2 - walkwayWidth;
+  let yDiff = 0;
+
+  let dY = - halfHeight + thHeight8/2 + walkwayWidth; 
+  let dX = - halfWidth;
+  var yNudge;
+   let sidewalk =  "rgb(180,180,188)";
+   let lightGrass = "rgb(20,200,80)";
+   let storeWood = "rgb( 104, 52, 16)";
+    let trees = "rgb(220,120,2)";
+    let plants = "rgb(0,140,12)";
+    let roof = "rgb(140,160,184)";
+    const boroughSections = 3;
+    var tableColumns;
+    var notchDX = 0;
+    var extraLabelY = halfHeight - walkwayWidth;
+    let spaceLabels = - thHeight8/5;
+    let extraLabelNames = ["Walkway", "Storefront", "Store/Townhome", "Backyard", "Shared Greenspace", "Backyard", "Townhome", "Front lawn", "Police", "Fire","Community building", "Tennis court"  , "Tennis court", "Post Office" ,"Pickup/Delivery"];
+
+    var extraLabelXY = new Array(extraLabelNames.length*2);
+    let elPosition = 0;
+
+//______draw loop_____
+for(let j = 0 ; j < boroughSections ; j++){
+    if(j>0 && j<4){
+         tableColumns = 7;
+     }
+     else{
+       tableColumns = 8;
+     }
+    if(j==2){
+      yNudge = thHeight4/2;
+      blockHeight = thHeight4;
+    }
+    else{ 
+      yNudge = 0;
+      blockHeight = thHeight8;
+    }
+
+  for(let k = 0 ; k < tableColumns ; k++){
+    let modifiedWalkwayWidth = walkwayWidth;
+  if(j==1 && k==3){
+      modifiedWalkwayWidth = walkwayWidth*4;
+      notchDX = dX + modifiedWalkwayWidth/2;
+   } 
+
+   xDiff = modifiedWalkwayWidth/2;
+   dX += xDiff;
+
+      CURRENT_CONTEXT.fillStyle = sidewalk;
+
+fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY-yNudge, modifiedWalkwayWidth , blockHeight, angle);
+    if(k==0 && j==0){
+       extraLabelXY[elPosition++] = dX;
+       extraLabelXY[elPosition++] = extraLabelY;
+       extraLabelY += spaceLabels;
+    }
+
+     xDiff = (modifiedWalkwayWidth + frontyardWidth)/2;
+     dX += xDiff;
+   
+     if(k%2 == 1){
+          CURRENT_CONTEXT.fillStyle = plants;
+      }
+      else{
+         CURRENT_CONTEXT.fillStyle = storeWood;
+     }
+
+    fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY-yNudge, frontyardWidth, blockHeight, angle);
+if(k==0 && j==0){
+       extraLabelXY[elPosition++] =  dX;
+       extraLabelXY[elPosition++] = extraLabelY;
+       extraLabelY += spaceLabels;
+    }
+
+     xDiff = (frontyardWidth+townhomeWidth)/2;
+     dX += xDiff;
+
+      CURRENT_CONTEXT.fillStyle = roof;
+     fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY-yNudge, townhomeWidth, blockHeight, angle);
+if(k==0 && j==0){
+       extraLabelXY[elPosition++] = dX;
+       extraLabelXY[elPosition++] = extraLabelY;
+       extraLabelY += spaceLabels;
+    }
+      xDiff = (townhomeWidth+backyardWidth)/2;
+     dX += xDiff;
+
+      CURRENT_CONTEXT.fillStyle = trees;
+     fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY-yNudge, backyardWidth, blockHeight, angle);
+if(k==0 && j==0){
+       extraLabelXY[elPosition++] =  dX;
+       extraLabelXY[elPosition++] = extraLabelY;
+       extraLabelY += spaceLabels;
+    }
+   xDiff = (backyardWidth + sharedyardWidth)/2;
+   dX += xDiff;
+
+CURRENT_CONTEXT.fillStyle = lightGrass;
+   
+fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY-yNudge, sharedyardWidth, blockHeight, angle);
+if(k==0 && j==0){
+       extraLabelXY[elPosition++] = dX;
+       extraLabelXY[elPosition++] = extraLabelY;
+        extraLabelY += spaceLabels;
+    }
+     xDiff = (backyardWidth + sharedyardWidth)/2;
+     dX += xDiff;
+
+       CURRENT_CONTEXT.fillStyle = trees;
+     
+      fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY-yNudge, backyardWidth, blockHeight, angle);
+  if(k==0 && j==0){
+       extraLabelXY[elPosition++] = dX;
+       extraLabelXY[elPosition++] = extraLabelY;
+       extraLabelY += spaceLabels;
+  }
+     xDiff = (backyardWidth+townhomeWidth)/2;
+     dX += xDiff;
+
+      CURRENT_CONTEXT.fillStyle = roof;
+
+fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY-yNudge, townhomeWidth, blockHeight, angle);
+ if(k==0 && j==0){
+       extraLabelXY[elPosition++] = dX;
+       extraLabelXY[elPosition++] = extraLabelY;
+       extraLabelY += spaceLabels;
+    }
+     xDiff = (townhomeWidth+frontyardWidth)/2;
+     dX += xDiff;
+
+    if(k%2 == 1){
+       CURRENT_CONTEXT.fillStyle = storeWood;
+     }
+     else{
+        CURRENT_CONTEXT.fillStyle = plants;
+     }
+
+     fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY-yNudge, frontyardWidth, blockHeight, angle);
+   if(k==0 && j==0){
+       extraLabelXY[elPosition++] = dX;
+       extraLabelXY[elPosition++] = extraLabelY;
+       extraLabelY += spaceLabels;
+    }
+     
+xDiff = frontyardWidth/2;
+dX += xDiff;
+
+  } // end inner loop
+   
+   dX = - halfWidth ;
+
+    yDiff = thHeight8+parkHeight;
+    dY += yDiff;
+} // end outer loop
+
+//________City INTEGRATION________
+
+// Police
+
+CURRENT_CONTEXT.fillStyle = "blue";
+
+// police in  corners
+dX = - halfWidth + sharedyardWidth + 2*( backyardWidth  + townhomeWidth + walkwayWidth) + 2.5 * frontyardWidth; 
+dY = 2*thHeight8 + parkHeight*3;
+fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY, townhomeWidth, townhomeHeight, angle);
+
+// mid corner
+dX = notchDX;
+dY = thHeight4+parkHeight*3;
+fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY, townhomeWidth, townhomeHeight, angle);
+extraLabelXY[elPosition++] = dX;
+extraLabelXY[elPosition++] = dY;
+
+// Fire__
+CURRENT_CONTEXT.fillStyle = "red";
+dY = thHeight8+thHeight4+ parkHeight*2;
+fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY, townhomeWidth, townhomeHeight, angle);
+extraLabelXY[elPosition++] = dX;
+extraLabelXY[elPosition++] = dY;
+
+//____Community Buildings______
+// cultureCenter, scienceArtMuseum, Community, Theater
+CURRENT_CONTEXT.fillStyle = "yellow";
+
+dY = halfHeight - thHeight8*1.5-parkHeight - walkwayWidth;
+fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY, walkwayWidth*1.5, townhomeHeight*3, angle);
+extraLabelXY[elPosition++] = dX;
+extraLabelXY[elPosition++] = dY;
+
+//_____Tennis_court 23.8X8.2_____
+
+CURRENT_CONTEXT.fillStyle = "rgb(108,200,255)";
+ let tennisWidth = shrunkWidth * 23.8;
+ let tennisHeight = shrunkHeight * 8.2;
+  let dXStart = - halfWidth + walkwayWidth + backyardWidth +  townhomeWidth + frontyardWidth + sharedyardWidth/2;
+   dX = dXStart;
+   dY = halfHeight - thHeight8 - parkHeight/2 - walkwayWidth;
+
+  let dXPlus = 2 * (backyardWidth + townhomeWidth + frontyardWidth) + walkwayWidth + sharedyardWidth;
+
+   for(let p = 0 ; p < 2; p++){
+     for(let n = 0 ; n < 3; n++){
+        fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY, tennisWidth, tennisHeight, angle);
+        dX += dXPlus;
+    } // end tennis inner loop
+     // label the last one
+     extraLabelXY[elPosition++] = dX-dXPlus;
+     extraLabelXY[elPosition++] = dY;
+
+    dY -= thHeight8 + parkHeight;
+    dX = dXStart;
+} // end tennis outer loop
+
+//____Post Office____
+CURRENT_CONTEXT.fillStyle = "rgb(244,222,206)";
+dX = - halfWidth + walkwayWidth + 0.5 * frontyardWidth; 
+dY = - halfHeight + walkwayWidth + townhomeHeight/2;
+fillRectangleQuad_XYdXdYWHAngle(x,y, dX, dY, townhomeWidth, townhomeHeight, angle);
+extraLabelXY[elPosition++] = dX;
+extraLabelXY[elPosition++] = dY;
+
+//_____Postal pickup/delivery____
+  CURRENT_CONTEXT.fillStyle = "white";
+
+  let pierHeight = shrunkHeight*8;
+  let pierWidth = pierHeight*6;
+  fillRectangleQuad_XYdXdYWHAngle(x,y, halfWidth-pierWidth/2, halfHeight+pierHeight/2,pierWidth , pierHeight, angle);
+   fillRectangleQuad_XYdXdYWHAngle(x,y, halfHeight+pierHeight/2,  halfWidth-pierWidth/2 , pierHeight, pierWidth , angle);
+   extraLabelXY[elPosition++] = -halfWidth;
+   extraLabelXY[elPosition++] = -halfHeight;
+// now, the corners
+let pierCorner =  pierHeight * 1.25;
+fillRectangleQuad_XYdXdYWHAngle(x,y, halfWidth+pierCorner/2, halfHeight+pierCorner/2,pierCorner, pierCorner, angle);
+
+//¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤
+
+//____breakup_townhomes with lines___
+// tennis    chess   playground  
+//  bike path   picnic tables
+// chickenCoop miniFarm  
+//  swinming pool
+
+// Ibanez guitar 1.14 x 0.4 meter
+
+  CURRENT_CONTEXT.strokeStyle = "black";
+  CURRENT_CONTEXT.lineWidth = 1;
+   startX = x - halfWidth;
+   endX = x + halfWidth;
+
+  let tableRows = 55;
+  
+  startY = y - height/2 + townhomeHeight;
+  for(let k = 0 ; k < tableRows ; k++){
+       //   rotate
+      CURRENT_CONTEXT.moveTo(startX, startY);
+      CURRENT_CONTEXT.lineTo(endX, startY);
+
+    CURRENT_CONTEXT.stroke();
+
+if((k>9 && k<22) ||(k>31 && k<43)){
+   startY += thHeightNoKids;
+}
+else{
+startY += townhomeHeight;
+}
+    
+  } // end loop
+
+//_____Duck & Swan river___
+CURRENT_CONTEXT.fillStyle = "blue";
+riverHeight = height*0.985; //shrunkHeight*50;
+riverWidth =  shrunkWidth*2;
+fillRectangle_XYWHAngle(x,y, riverWidth, riverHeight, angle);
+fillRectangle_XYWHAngle(x,y, riverHeight, riverWidth, angle);
+
+//_____Mosque___
+//_____Octagon___
+let mosqueDX = 0;
+let mosqueDY = 86 * shrunkHeight;
+let mosqueRadius = 25*shrunkWidth;
+let mEnd = angle + TWO_PI;
+rotated = rotatePoint_centerXcenterYdXdYAngle(x, y, mosqueDX, mosqueDY, angle);
+let m = EIGHTH_PI + angle; 
+    octagonArray = new Array(16),
+
+   CURRENT_CONTEXT.fillStyle = "rgb(120,140,100)";
+ 
+//__octagon loop__
+  for(let t = 0 ; t < 16; t+=2){ 
+    octagonArray[t] =   rotated[0] +  mosqueRadius * Math.sin(m);
+    octagonArray[t+1] = rotated[1] +  mosqueRadius * Math.cos(m);
+     m += QUARTER_PI;
+}
+
+fillPolygon(octagonArray);
+
+//_____Heart____
+gStartX = rotated[0] - mosqueRadius;
+gStartY = rotated[1] - mosqueRadius;
+gEndX = rotated[0] + mosqueRadius;
+gEndY = rotated[1] + - mosqueRadius;
+
+let goldGradient = CURRENT_CONTEXT.createLinearGradient(gStartX, gStartY ,gEndX, gEndY);
+goldGradient.addColorStop(0, "rgb(255,223,0)");
+goldGradient.addColorStop(1, "rgb(210,170,50)");
+
+CURRENT_CONTEXT.fillStyle = goldGradient;
+
+fillHeart_XYDiameterAngle(rotated[0], rotated[1], mosqueRadius*1.125 ,angle);
+  
+
+//___Study Center 4 Hearts__
+ var heartDX;
+ var  heartDY;
+ let heartSize = 18*shrunkWidth;
+ for(let ss =0 ; ss <2 ; ss++){
+     for(let tt =0 ; tt <2 ; tt++){
+        
+       heartDX = 80.0 * (tt-0.5) * shrunkWidth;
+       heartDY = 80.0 * shrunkHeight * (ss-0.5);
+      let  rotatedHeart = rotatePoint_centerXcenterYdXdYAngle(x, y, heartDX, heartDY, angle);
+
+     fillHeart_XYDiameterAngle( rotatedHeart[0], rotatedHeart[1], heartSize,angle);
+    } // inner t loop
+  } // outer s loop
+
+//____Arrows & Labels___
+labelsWereDrawn = drawLabelsArrows_NamesRectanglesScaleXYWH(buildingNames, rectangleArray, SCALE_DOWN, 
+x, y, width, height);
+
+   if(labelsWereDrawn){ 
+      // Mosque needs custom labeling
+       let mosqueLabelWidth = shrunkWidth*120;
+       arrowX1 = rotated[0] + mosqueLabelWidth*1.1;
+       arrowY1 = rotated[1]+50;
+       drawArrow(arrowX1, arrowY1, rotated[0],rotated[1]);
+       drawLabel_XYWText(arrowX1, arrowY1, mosqueLabelWidth, "Mosque");
+   var x00;
+   var x01;
+   var y00;
+   var yPush = 0;
+    var markY=0;
+    yStart = y - halfHeight;
+//// extraLabelNames__
+  for(let n = 0 ; n < extraLabelXY.length  ; n+=2){
+      let nextName = extraLabelNames[Math.floor(n/2)];
+      labelWidth = nextName.length * halfWidth/50;
+     x00 = x - extraLabelXY[n];
+     x01 = x + halfWidth+ labelWidth/1.5;
+     y00 = y - extraLabelXY[n+1];
+     y01 = yStart + yPush;
+     if(nextName.includes("ommunity")){
+          markY = y01;
+      }
+     drawArrow(x01,y01,x00,y00);
+     drawLabel_XYWText(x01,y01,  labelWidth  ,nextName );
+     yPush += halfHeight/12;
+} // label loop
+
+let communityLabelNames = ["Community Center", "Art & Science Museum","Cultural Center","Skating Rink","Indoor Pool","Planetarium & Observatory", "Theater", "Bowling Alley", "Amusement Park"];
+
+for(let n = 0 ; n < communityLabelNames.length  ; n++){
+     markY += halfHeight/20;
+      nextName = communityLabelNames[n];
+      labelWidth = nextName.length * halfWidth/72;
+     x01 = x + halfWidth*1.35 + labelWidth/2;
+     
+     drawLabel_XYWText(x01,markY,  labelWidth,nextName );
+   }
+
+   } // end if
+
+}// end function
+
+/**********************
+drawAzzanBoroughOnMap_Angle
+**********************/
+function drawAzzanBoroughOnMap_Angle(latitude, longitude, angle){
+
+const x = (longitude - MAP_OFFSET_X) * MAP_SCALE;
+const y = CANVAS_HEIGHT - (latitude - MAP_OFFSET_Y) * MAP_SCALE;
+
+const width = MAP_SCALE/200.0;
+const height = width;
+
+  drawCityBlock_XYWHAngle(x,y, width, height, angle);
+}// end function
+
+/**********************
+drawInstructorVillage_XYWHAngle
+Garden Church, ,Hospital
+City center, Police,Fire
+**********************/
+function drawInstructorVillage_XYWHAngle(x, y, width, height, angle){
+
+if(width<=0 || height<=0){
+    logFailure(88944, "width "+ width +"  , height "+ height);
+}
+
+}// end function
+
+/********************
+Capital____
+Senate/ Parliment
+Courthouse  Graveyard
+meadow   pastureland   animal stall
+*******************/
+
+//  MAKE THIS S GRADIENT
+//  green--> sand
+CURRENT_CONTEXT.fillStyle='rgb(22,205,22)' ;
+CURRENT_CONTEXT.fillRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+LATEST_POSITION = [-1,-1];
+
+/**********************
+copyToClipboard
+**********************/
+function copyToClipboard(theElement){
+    theElement.select(); 
+    document.execCommand("copy"); 
+      theElement.blur();
+}// end function
+
+/**********************
+touchStarted
+touches: every finger currently touching the screen
+
+targetTouches: Like touches
+ filtered to only the information for finger touches that started out within the same node
+
+changedTouches:
+ every finger involved in the event
+**********************/
+function touchStarted(touchEvent){
+    const touches = touchEvent.changedTouches;
+  
+    if(touches.length != 1){
+       return;
+    }
+
+    let adjustedX = touches[0].pageX - MAP_CANVAS.offsetLeft;
+    let adjustedY = touches[0].pageY - MAP_CANVAS.offsetTop;
+    LATEST_POSITION = [adjustedX, adjustedY];
+ 
+}// end function
+
+/**********************
+touchEnded
+**********************/
+function touchEnded(){
+  if(LATEST_POSITION[0] < 0){
+     return;
+  }
+   CURRENT_CONTEXT = PIN_CONTEXT;
+   clearCanvas();
+   const labelOffset = MAP_SCALE/60;
+   const labelWidth = MAP_SCALE/10;
+   let arrowX = LATEST_POSITION[0] ;
+   let arrowY = LATEST_POSITION[1] ;
+   let labelX = arrowX + labelOffset;
+   let labelY = arrowY + labelOffset;
+   latLong = canvasXYToLatitudeLongitude(arrowX,arrowY);
+   let latLongText = ""+latLong[0]+", "+latLong[1];
+
+   //drawArrow(labelX, labelY, arrowX,arrowY);
+   drawPin(arrowX,arrowY, latLongText);
+  // drawLabel_XYWText( labelX, labelY, labelWidth, latLongText );
+   var latLongInput = document.getElementById("lname");
+  latLongInput.value = latLongText;
+  copyToClipboard (latLongInput);
+  
+CURRENT_CONTEXT = MAP_CONTEXT;
+
+   LATEST_POSITION = [-1, -1];
+}// end function
+
+/**********************
+touchCancelled
+**********************/
+function touchCancelled(){
+    LATEST_POSITION = [-1, -1];
+}// end function
+
+/**********************
+touchMoved
+**********************/
+function touchMoved(){
+LATEST_POSITION = [-1, -1];
+}// end function
+
+//■■■■ START UP    INITIALIZE ■■■■
+PIN_CANVAS.addEventListener('touchstart', touchStarted);
+PIN_CANVAS.addEventListener('touchend', touchEnded);
+PIN_CANVAS.addEventListener('touchcancel', touchCancelled);
+PIN_CANVAS.addEventListener('touchmove', touchMoved);
+
+var allAzzan = AZZAN_LEFT.concat(AZZAN_TOP);
+allAzzan = allAzzan.concat(AZZAN_RIGHT);
+ allAzzan = allAzzan.concat(AZZAN_BOTTOM);
+
+//______Grapevines from the right wall__
+let startG = 52;
+let stopG = startG+152;
+let vineWidth = MAP_SCALE / 2000000.0;
+let pointsUsed =  stopG - startG;
+let gvArraySize = pointsUsed * 2;
+let grapevinePoints = new Array(gvArraySize);
+let lastPoint = gvArraySize-2;
+
+  for(let g=0 ; g<pointsUsed;g+=2){
+    pLat = AZZAN_RIGHT[g+startG];
+    pLong = AZZAN_RIGHT[g+startG+1];
+    grapevinePoints[g] = pLat;
+    grapevinePoints[g+1] = pLong;
+    grapevinePoints[lastPoint] = pLat;
+    grapevinePoints[lastPoint+1] = pLong+vineWidth;
+    lastPoint -= 2;
+  }// end loop
+
+//___Lower Features__
+CURRENT_CONTEXT.fillStyle =  'rgb(0,0,100)' ;
+ drawMapFeature(SEA_XY);
+
+CURRENT_CONTEXT.fillStyle = 'rgb(40,150,16)' ;
+ drawMapFeature(MEDITERRANIAN_XY);
+
+CURRENT_CONTEXT.fillStyle='rgb(226, 194,76)' ;
+
+const allSinai = SINAI_TOP_XY.concat(SINAI_RIGHT_XY);
+ drawMapFeature(allSinai);
+
+CURRENT_CONTEXT.fillStyle = "Yellow";
+drawMapFeature(allAzzan);
+
+CURRENT_CONTEXT.fillStyle = "rgb(0,200,200)";
+drawMapFeature(SCHOOLS_MANUFACTURING_XY);
+
+CURRENT_CONTEXT.fillStyle = "rgb(20,96,96)";
+drawMapFeature(INSTRUCTOR_XY);
+
+//____Draw Spiderweb__Rays__
+const lightGreen = "rgb(20,240,60)";
+
+const TOTAL_CANAL_RAYS = 26;
+let lineCount = TOTAL_CANAL_RAYS +2;
+  CURRENT_CONTEXT.strokeStyle = "blue";
+  let lineWidth = 1 + MAP_SCALE/3000.0;
+ CURRENT_CONTEXT.lineWidth = lineWidth;
+let treeDash = [lineWidth, lineWidth];
+
+var canalStartX;
+var canalStartY;
+var canalEndX;
+var canalEndY;
+
+var currentAngle = -0.02 + SOUTH_BORDER_ANGLE;
+const angleAdvance = (NORTH_BORDER_ANGLE - currentAngle)/ (lineCount-1);
+ const webCtr = mapLatitudeLongitudeToCanvasXY(SPIDERWEB_CENTER[0], SPIDERWEB_CENTER[1]);
+let cLength = MAP_SCALE*2.4;
+let cLengthShort = MAP_SCALE*2.08001;
+let cStart = MAP_SCALE * 1.990;
+let lineCountPlus1 = lineCount+1;
+
+//_____Ray loop____
+for(let i = 0 ; i<lineCountPlus1;i++){
+    /*******
+if(i %10 == 0){
+    CURRENT_CONTEXT.strokeStyle = "blue"; 
+   ///// CURRENT_CONTEXT.setLineDash( NO_DASH );
+}
+else{
+    CURRENT_CONTEXT.setLineDash( treeDash );
+    CURRENT_CONTEXT.strokeStyle = lightGreen; 
+} *******/
+
+    canalStartX = webCtr[0] + cStart * Math.cos(currentAngle);
+    canalStartY = webCtr[1] - cStart * Math.sin(currentAngle);
+ 
+  if( currentAngle > -0.821){
+     canalEndX = webCtr[0] + cLengthShort * Math.cos(currentAngle);
+    canalEndY = webCtr[1] - cLengthShort * Math.sin(currentAngle);
+}
+else{
+canalEndX = webCtr[0] + cLength * Math.cos(currentAngle);
+    canalEndY = webCtr[1] - cLength * Math.sin(currentAngle);
+}
+
+   CURRENT_CONTEXT.beginPath(); 
+   CURRENT_CONTEXT.moveTo(canalStartX, canalStartY);
+
+   CURRENT_CONTEXT.lineTo( canalEndX,  canalEndY);
+   CURRENT_CONTEXT.stroke();
+// alert("line x"+ webCtr[0]+"  y"+ webCtr[1]  +"   to x "+canalEndX+"  y "+canalEndY);
+
+   currentAngle += angleAdvance;
+}// end loop
+
+//____Draw Spiderweb__Borders__
+let borderDistance = MAP_SCALE/55;
+var qEnd;
+var qStart = -0.05 + SOUTH_BORDER_ANGLE ;
+
+for(let p = cStart ; p <= cLength ; p+= borderDistance){
+    /// alert("p "+p);
+    
+   if(p > (cStart + (cLength-cStart) * 0.18)){
+      qEnd = NORTH_BORDER_ANGLE - 0.12006;
+   }
+   else{
+     qEnd = NORTH_BORDER_ANGLE + 0.02;
+  }
+
+    for(let q = qStart ; q <= qEnd ; q += angleAdvance){
+
+    currentX = webCtr[0]  + p * Math.cos(q);
+    currentY = webCtr[1]  - p * Math.sin(q);
+
+   if( q == qStart){
+      CURRENT_CONTEXT.beginPath(); 
+      CURRENT_CONTEXT.moveTo(currentX, currentY);
+   }
+   else{
+     CURRENT_CONTEXT.lineTo( currentX, currentY );
+   }
+} // end inner loop
+CURRENT_CONTEXT.stroke();
+}// end outer loop
+
+CURRENT_CONTEXT.setLineDash( NO_DASH );
+
+ 
+//___Upper Features____
+CURRENT_CONTEXT.fillStyle = "Red";
+drawMapFeature(KEREM_SHALOM);
+
+CURRENT_CONTEXT.fillStyle = 'rgb(226, 4, 226)' ;
+drawMapFeature(KADESH_BARNEA_XY);
+
+CURRENT_CONTEXT.fillStyle = 'rgb(6, 24, 226)' ;
+drawMapFeature(BEER_MILKA_XY);
+
+CURRENT_CONTEXT.fillStyle = 'rgb(166, 100, 149)' ;
+drawMapFeature(ECLAIRS_XY);
+
+CURRENT_CONTEXT.fillStyle = 'rgb(136, 0, 180)' ;
+drawMapFeature(WINERY_XY);
+
+CURRENT_CONTEXT.fillStyle = 'rgb(226, 20, 90)' ;
+drawMapFeature(SILK_FACTORY_XY);
+
+CURRENT_CONTEXT.fillStyle = 'rgb(0, 200, 50)' ;
+drawMapFeature(QUATERNION_PALACE_XY);
+
+CURRENT_CONTEXT.fillStyle = 'rgb(220, 200, 120)' ;
+drawMapFeature(HARBOR_XY);
+
+CURRENT_CONTEXT.fillStyle = 'rgb(236, 88, 10)' ;
+drawMapFeature(PORT_XY);
+
+CURRENT_CONTEXT.fillStyle = "rgb(100,0,140)";
+drawMapFeature(grapevinePoints);
+
+let forestGradient = CURRENT_CONTEXT.createLinearGradient(200, 500 ,MAP_SCALE/2, 1800);
+forestGradient.addColorStop(0, "rgb(18,92,14)");
+forestGradient.addColorStop(1, "rgb(0,128,0)");
+
+CURRENT_CONTEXT.fillStyle = forestGradient;
+drawMapFeature(SHERWOOD_FOREST_XY);
+
+CURRENT_CONTEXT.fillStyle = "rgb(235,70,10)";
+drawMapFeature(ORCHARD_XY);
+
+CURRENT_CONTEXT.fillStyle = "rgb(70,70,70)";
+drawMapFeature(CEMETARY_XY);
+
+CURRENT_CONTEXT.fillStyle = "rgb(48,32,20)";
+drawMapFeature(CAPITAL_XY);
+
+CURRENT_CONTEXT.fillStyle = "rgb(18,32,242)";
+drawMapFeature(TAYLOR_THE_TAILOR_XY);
+
+CURRENT_CONTEXT.fillStyle = "rgb(0,202,242)";
+drawMapFeature(LEV_YASHAR_XY);
+
+CURRENT_CONTEXT.fillStyle = "rgb(138,202,242)";
+drawMapFeature(HATCHERY_XY);
+
+//____Arrows___&___Labels___
+var labelPosition = new Array(2);
+
+const labelText = ["Cruise Port", "Harbor", "Quaternion Palace", "Eclairs", "Silk Factory", "Winery",   "Schools & Manufacturing", "Sherwood Forest", "Orchard", "Grapevines on the wall", "Instructor Housing","Senate & Supreme Court", "Taylor the Tailor","Lev Yashar","Royal Blue Hatchery","Cemetary"];
+
+const labelXYArray = [PORT_XY,  HARBOR_XY, QUATERNION_PALACE_XY,  ECLAIRS_XY,  SILK_FACTORY_XY, WINERY_XY, SCHOOLS_MANUFACTURING_XY, SHERWOOD_FOREST_XY, ORCHARD_XY, grapevinePoints, INSTRUCTOR_XY, CAPITAL_XY, TAYLOR_THE_TAILOR_XY, LEV_YASHAR_XY, HATCHERY_XY, CEMETARY_XY];
+
+totalLabels = labelText.length;
+
+for(let p = 0;p<totalLabels;p++){
+
+   avgPos = findAverageMapPosition(labelXYArray[p]);
+    labelPosition[0] = avgPos[0] - 0.1 * (Math.random() - 0.5) ;
+    labelPosition[1] = avgPos[1] - 0.1 * (Math.random() - 0.5) ;
+    drawArrowOnMap( labelPosition[0] , labelPosition[1]  , avgPos[0], avgPos[1]);
+    drawLabelOnMap(labelPosition[0] , labelPosition[1] , labelText[p].length*MAP_SCALE/240.0,  labelText[p]);
+}
+
+//♡♡♡♡♡TESTING♡♡♡♡
+
+</script>
+</body>
+</html>
